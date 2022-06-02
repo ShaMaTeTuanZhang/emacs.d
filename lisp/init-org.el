@@ -61,9 +61,9 @@
     "Source"
     (("s" (hot-expand "<s") "src")
      ("m" (hot-expand "<s" "emacs-lisp") "emacs-lisp")
-     ("y" (hot-expand "<s" "python :results output") "python")
-     ("p" (hot-expand "<s" "perl") "perl")
-     ("r" (hot-expand "<s" "ruby") "ruby")
+     ("p" (hot-expand "<s" "python :results output") "python")
+     ("j" (hot-expand "<s" "js2") "javascript")
+     ("r" (hot-expand "<s" "rust") "rust")
      ("S" (hot-expand "<s" "sh") "sh")
      ("g" (hot-expand "<s" "go :imports '\(\"fmt\"\)") "golang"))
     "Misc"
@@ -124,19 +124,15 @@ prepended to the element after the #+HEADER: tag."
   (setq org-modules nil                 ; Faster loading
         org-directory centaur-org-directory
         org-capture-templates
-        `(("i" "Idea" entry (file ,(concat org-directory "/idea.org"))
-           "*  %^{Title} %?\n%U\n%a\n")
-          ("t" "Todo" entry (file ,(concat org-directory "/gtd.org"))
-           "* TODO %?\n%U\n%a\n" :clock-in t :clock-resume t)
-          ("n" "Note" entry (file ,(concat org-directory "/note.org"))
-           "* %? :NOTE:\n%U\n%a\n" :clock-in t :clock-resume t)
-          ("j" "Journal" entry ('file+olp+datetree
-                                ,(concat org-directory "/journal.org"))
-           "*  %^{Title} %?\n%U\n%a\n" :clock-in t :clock-resume t)
-	      ("b" "Book" entry ('file+olp+datetree
-                             ,(concat org-directory "/book.org"))
-	       "* Topic: %^{Description}  %^g %? Added: %U"))
-
+        `(
+          ("t" "Todo" entry (file ,(concat org-directory "/task.org"))
+           "* TODO [#A] %i%?\n" :empty-lines 1)
+          ("p" "Plan" entry (file ,(concat org-directory "/task.org"))
+           "* TODO [#C] %i%?\n" :empty-lines 1)
+          ("f" "Flag" entry (file ,(concat org-directory "/project.org"))
+           "* TODO [%] %? \n%U\n")
+          ("r" "Routine" entry ('file+datetree ,(concat org-directory "/routine.org"))
+           "*  %^{Title} %?\n%U\n" :clock-in t :clock-resume t))
         org-todo-keywords
         '((sequence "TODO(t)" "DOING(i)" "HANGUP(h)" "|" "DONE(d)" "CANCEL(c)")
           (sequence "⚑(T)" "🏴(I)" "❓(H)" "|" "✔(D)" "✘(C)"))
@@ -200,7 +196,7 @@ prepended to the element after the #+HEADER: tag."
       (use-package org-superstar
         :if (and (display-graphic-p) (char-displayable-p ?◉))
         :hook (org-mode . org-superstar-mode)
-        :init (setq org-superstar-headline-bullets-list '("◉""○""◈""◇""⁕")))
+        :init (setq org-superstar-headline-bullets-list '("⁋""➤""◈""◇""✦")))
       (use-package org-fancy-priorities
         :diminish
         :hook (org-mode . org-fancy-priorities-mode)
@@ -323,24 +319,65 @@ prepended to the element after the #+HEADER: tag."
   (use-package org-roam
     :diminish
     :hook (after-init . org-roam-db-autosync-enable)
-    :bind (("C-c n l" . org-roam-buffer-toggle)
-           ("C-c n f" . org-roam-node-find)
-           ("C-c n g" . org-roam-graph)
-           ("C-c n i" . org-roam-node-insert)
+    :bind (
+           ("C-c n a" . org-roam-alias-add)
            ("C-c n c" . org-roam-capture)
-           ("C-c n j" . org-roam-dailies-capture-today))
+           ("C-c n d" . org-roam-dailies-capture-today)
+           ("C-c n f" . org-roam-node-find)
+           ("C-c n g" . org-roam-dailies-goto-date)
+           ("C-c n i" . org-roam-node-insert)
+           ("C-c n j" . org-roam-dailies-capture-date)
+           ("C-c n l" . org-roam-buffer-toggle)
+           ("C-c n r" . org-roam-tag-remove)
+           ("C-c n t" . org-roam-tag-add)
+           ("C-c n y" . org-roam-dailies-capture-yesterday))
     :init
-    (setq org-roam-directory (file-truename centaur-org-directory))
+    (setq org-roam-directory (file-truename "~/Org/Notes"))
     :config
     (unless (file-exists-p org-roam-directory)
       (make-directory org-roam-directory))
-
+    (setq org-roam-dailies-capture-templates
+          '(("d" "default" entry "** %?" :if-new
+             (file+head+olp "%<%G-W%V>.org" "#+title: %<%G-W%V>\n"
+                            ("%<%A %Y-%m-%d>")))))
+    (setq org-roam-capture-templates
+          '(("m" "main" plain
+             "%?"
+             :if-new (file+head "main/%<%Y%m>-${slug}.org"
+                                "#+title: ${title}\n")
+             :immediate-finish t
+             :unnarrowed t)
+            ("r" "reference" plain "%?"
+             :if-new
+             (file+head "reference/%<%Y%m>-${title}.org" "#+title: ${title}\n")
+             :immediate-finish t
+             :unnarrowed t)
+            ("a" "article" plain "%?"
+             :if-new
+             (file+head "articles/%<%Y%m>-${title}.org" "#+title: ${title}\n#+filetags: :article:\n")
+             :immediate-finish t
+             :unnarrowed t)))
+    (cl-defmethod org-roam-node-type ((node org-roam-node))
+      "Return the TYPE of NODE."
+      (condition-case nil
+          (file-name-nondirectory
+           (directory-file-name
+            (file-name-directory
+             (file-relative-name (org-roam-node-file node) org-roam-directory))))
+        (error "")))
+    (setq org-roam-node-display-template
+          (concat "${type:15} ${title:*} " (propertize "${tags:25}" 'face 'org-tag)))
     (when emacs/>=27p
       (use-package org-roam-ui
         :init
         (when (featurep 'xwidget-internal)
           (setq org-roam-ui-browser-function #'xwidget-webkit-browse-url))))))
-
+;; org-download
+(require 'org-download)
+(defun dummy-org-download-annotate-function (link)
+  "")
+(setq org-download-annotate-function
+      #'dummy-org-download-annotate-function)
 (provide 'init-org)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

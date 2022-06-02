@@ -68,11 +68,11 @@
      ("m" toggle-frame-maximized "maximize" :exit t)
      ("f" toggle-frame-fullscreen "fullscreen" :exit t))
     "Resize"
-    (("h" shrink-window-horizontally "←")
-     ("j" enlarge-window "↓")
-     ("k" shrink-window "↑")
-     ("l" enlarge-window-horizontally "→")
-     ("n" balance-windows "balance" :exit t))
+    (("e" shrink-window-horizontally "←")
+     ("n" enlarge-window "↓")
+     ("p" shrink-window "↑")
+     ("i" enlarge-window-horizontally "→")
+     ("b" balance-windows "balance" :exit t))
     "Split"
     (("r" split-window-right "horizontally")
      ("R" split-window-horizontally-instead "horizontally instead")
