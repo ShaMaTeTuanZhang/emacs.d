@@ -22,6 +22,7 @@
    '("B" . counsel-switch-buffer)
    '("l" . "C-c C-p")
    '("o" . ace-window)
+   '("p" . projectile-command-map)
    '("r" . counsel-rg)
    '("z" . counsel-fzf))
   (meow-normal-define-key
@@ -47,7 +48,6 @@
    '("b" . meow-back-word)
    '("B" . meow-back-symbol)
    '("c" . meow-change)
-   '("C" . "C-c")
    '("d" . meow-kill)
    '("D" . meow-delete)
    '("e" . meow-left)
@@ -85,7 +85,6 @@
    '("w" . meow-next-word)
    '("W" . meow-next-symbol)
    '("x" . meow-delete)
-   '("X" . "C-x")
    '("y" . meow-save)
    '("Y" . meow-yank-pop)
    '("z" . meow-pop-selection)
