@@ -115,42 +115,34 @@ Same as `replace-string C-q C-m RET RET'."
 (defun copy-file-name ()
   "Copy the current buffer file name to the clipboard."
   (interactive)
-  (if-let ((filename (if (equal major-mode 'dired-mode)
-                         default-directory
-                       (buffer-file-name))))
-      (progn
-        (kill-new filename)
-        (message "Copied '%s'" filename))
-    (warn "Current buffer is not attached to a file!")))
+  (let ((filename (if (equal major-mode 'dired-mode)
+                      default-directory
+                    (buffer-file-name))))
+    (if filename
+        (progn
+          (kill-new filename)
+          (message "Copied '%s'" filename))
+      (warn "Current buffer is not attached to a file!"))))
 
 ;; Browse URL
 (defun centaur-webkit-browse-url (url &optional pop-buffer new-session)
-  "Browse url with webkit and switch or pop to the buffer.
+  "Browse URL with xwidget-webkit' and switch or pop to the buffer.
+
 POP-BUFFER specifies whether to pop to the buffer.
 NEW-SESSION specifies whether to create a new xwidget-webkit session."
   (interactive (progn
                  (require 'browse-url)
                  (browse-url-interactive-arg "xwidget-webkit URL: ")))
-  (when (and (featurep 'xwidget-internal)
-             (fboundp 'xwidget-buffer)
-             (fboundp 'xwidget-webkit-current-session))
-    (xwidget-webkit-browse-url url new-session)
-    (let ((buf (xwidget-buffer (xwidget-webkit-current-session))))
-      (when (buffer-live-p buf)
-        (and (eq buf (current-buffer)) (quit-window))
-        (if pop-buffer
-            (pop-to-buffer buf)
-          (switch-to-buffer buf))))))
-
-(defun centaur-find-pdf-file (&optional url)
-  "Find a PDF file via URL and render by `pdf.js'."
-  (interactive "f")
-  (cond ((featurep 'xwidget-internal)
-         (xwidget-webkit-browse-url (concat "file://" url)))
-        ((bound-and-true-p counsel-mode)
-         (counsel-find-file url))
-        (t (find-file url))))
-(defalias 'find-pdf-file #'centaur-find-pdf-file)
+  (or (featurep 'xwidget-internal)
+      (user-error "Your Emacs was not compiled with xwidgets support"))
+  (xwidget-webkit-browse-url url new-session)
+  (let ((buf (xwidget-buffer (and (fboundp 'xwidget-webkit-current-session)
+                                  (xwidget-webkit-current-session)))))
+    (when (buffer-live-p buf)
+      (and (eq buf (current-buffer)) (quit-window))
+      (if pop-buffer
+          (pop-to-buffer buf)
+        (switch-to-buffer buf)))))
 
 ;; Mode line
 (defun mode-line-height ()
@@ -229,7 +221,7 @@ NEW-SESSION specifies whether to create a new xwidget-webkit session."
 (defun centaur-set-variable (variable value &optional no-save)
   "Set the VARIABLE to VALUE, and return VALUE.
 
-Save to `custom-file' if NO-SAVE is nil."
+  Save to `custom-file' if NO-SAVE is nil."
   (customize-set-variable variable value)
   (when (and (not no-save)
              (file-writable-p custom-file))
@@ -238,8 +230,8 @@ Save to `custom-file' if NO-SAVE is nil."
       (goto-char (point-min))
       (while (re-search-forward
               (format "^[\t ]*[;]*[\t ]*(setq %s .*)" variable)
-              nil t)
-        (replace-match (format "(setq %s '%s)" variable value) nil nil))
+                               nil t)
+  (replace-match (format "(setq %s '%s)" variable value) nil nil))
       (write-region nil nil custom-file)
       (message "Saved %s (%s) to %s" variable value custom-file))))
 
@@ -729,11 +721,10 @@ If SYNC is non-nil, the updating process is synchronous."
 (defun proxy-socks-show ()
   "Show SOCKS proxy."
   (interactive)
-  (when (fboundp 'cadddr)                ; defined 25.2+
-    (if (bound-and-true-p socks-noproxy)
-        (message "Current SOCKS%d proxy is %s:%s"
-                 (cadddr socks-server) (cadr socks-server) (caddr socks-server))
-      (message "No SOCKS proxy"))))
+  (if (bound-and-true-p socks-noproxy)
+      (message "Current SOCKS%d proxy is %s:%s"
+               (cadddr socks-server) (cadr socks-server) (caddr socks-server))
+    (message "No SOCKS proxy")))
 
 (defun proxy-socks-enable ()
   "Enable SOCKS proxy."
@@ -743,7 +734,7 @@ If SYNC is non-nil, the updating process is synchronous."
         socks-noproxy '("localhost"))
   (let* ((proxy (split-string centaur-socks-proxy ":"))
          (host (car proxy))
-         (port (cadr  proxy)))
+         (port (string-to-number (cadr proxy))))
     (setq socks-server `("Default server" ,host ,port 5)))
   (setenv "all_proxy" (concat "socks5://" centaur-socks-proxy))
   (proxy-socks-show))

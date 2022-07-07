@@ -58,12 +58,12 @@
   (use-package mpc
     :ensure nil
     :bind ("s-<f9>" . mpc)
-    :config
+    :init
     (defun restart-mpd ()
       (interactive)
       (call-process "pkill" nil nil nil "mpd")
       (call-process "mpd"))
-
+    :config
     (with-no-warnings
       (defun add-mpc-status-to-mode-line ()
         "Display current song in mode line."
@@ -71,9 +71,9 @@
       (advice-add #'mpc :after #'add-mpc-status-to-mode-line)))
 
   ;; Simple client for mpd
-  (when (executable-find "mpc")
-    (use-package simple-mpc
-      :bind ("M-<f9>" . simple-mpc))))
+  (use-package simple-mpc
+    :if (executable-find "mpc")
+    :bind ("M-<f9>" . simple-mpc)))
 
 (provide 'init-player)
 

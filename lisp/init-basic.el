@@ -75,16 +75,16 @@
   (setq read-process-output-max #x10000)  ; 64kb
 
   ;; Don't ping things that look like domain names.
-  (setq ffap-machine-p-known 'reject)
+  (setq ffap-machine-p-known 'reject))
 
-  ;; Garbage Collector Magic Hack
-  (use-package gcmh
-    :diminish
-    :init
-    (setq gcmh-idle-delay 'auto
-          gcmh-auto-idle-delay-factor 10
-          gcmh-high-cons-threshold #x1000000) ; 16MB
-    (gcmh-mode 1)))
+;; Garbage Collector Magic Hack
+(use-package gcmh
+  :diminish
+  :hook (emacs-startup . gcmh-mode)
+  :init
+  (setq gcmh-idle-delay 'auto
+        gcmh-auto-idle-delay-factor 10
+        gcmh-high-cons-threshold #x1000000)) ; 16MB
 
 ;; Encoding
 ;; UTF-8 as the default coding system
@@ -156,6 +156,11 @@
         track-eol t                     ; Keep cursor at end of lines. Require line-move-visual is nil.
         set-mark-command-repeat-pop t)  ; Repeating C-SPC after popping mark pops it again
 
+  ;; Only list the commands of the current modes
+  (when (boundp 'read-extended-command-predicate)
+    (setq read-extended-command-predicate
+          #'command-completion-default-include-p))
+
   ;; Visualize TAB, (HARD) SPACE, NEWLINE
   (setq-default show-trailing-whitespace nil) ; Don't show trailing whitespace by default
   (defun enable-trailing-whitespace ()
@@ -168,7 +173,8 @@
     (add-hook 'process-menu-mode-hook
               (lambda ()
                 (setq tabulated-list-format
-                      (vconcat `(("" ,(if (icon-displayable-p) 2 0))) tabulated-list-format))))
+                      (vconcat `(("" ,(if (icon-displayable-p) 2 0)))
+                               tabulated-list-format))))
 
     (defun my-list-processes--prettify ()
       "Prettify process list."
@@ -177,10 +183,12 @@
         (dolist (p (process-list))
           (when-let* ((val (cadr (assoc p entries)))
                       (icon (if (icon-displayable-p)
-                                (all-the-icons-octicon "zap"
-                                                       :height 0.8 :v-adjust -0.05
-                                                       :face 'all-the-icons-lblue)
-                              "x"))
+                                (concat
+                                 " "
+                                 (all-the-icons-faicon "bolt"
+                                                       :height 1.0 :v-adjust -0.05
+                                                       :face 'all-the-icons-lblue))
+                              " x"))
                       (name (aref val 0))
                       (pid (aref val 1))
                       (status (aref val 2))
@@ -217,7 +225,7 @@
               indent-tabs-mode nil)     ; Permanently indent with spaces, never with TABs
 
 (setq visible-bell t
-      inhibit-compacting-font-caches t  ; Don’t compact font caches during GC.
+      inhibit-compacting-font-caches t  ; Don’t compact font caches during GC
       delete-by-moving-to-trash t       ; Deleting files go to OS's trash folder
       make-backup-files nil             ; Forbide to make backup files
       auto-save-default nil             ; Disable auto save
@@ -237,16 +245,16 @@
 
   ;; Resize and re-position frames conveniently
   ;; Same keybindings as Rectangle on macOS
-  (bind-keys ("C-M-<return>" . centaur-frame-maximize)
+  (bind-keys ("C-M-<return>"    . centaur-frame-maximize)
              ("C-M-<backspace>" . centaur-frame-restore)
-             ("C-M-<left>" . centaur-frame-left-half)
-             ("C-M-<right>" . centaur-frame-right-half)
-             ("C-M-<up>" . centaur-frame-top-half)
-             ("C-M-<down>" . centaur-frame-bottom-half)))
+             ("C-M-<left>"      . centaur-frame-left-half)
+             ("C-M-<right>"     . centaur-frame-right-half)
+             ("C-M-<up>"        . centaur-frame-top-half)
+             ("C-M-<down>"      . centaur-frame-bottom-half)))
 
 ;; Global keybindings
-(bind-keys ("s-r" . revert-this-buffer)
-           ("C-x K" . delete-this-file)
+(bind-keys ("s-r"     . revert-this-buffer)
+           ("C-x K"   . delete-this-file)
            ("C-c C-l" . reload-init-file))
 
 (provide 'init-basic)

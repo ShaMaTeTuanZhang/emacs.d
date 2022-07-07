@@ -86,6 +86,24 @@
         ;; Enable flashing mode-line on errors
         (doom-themes-visual-bell-config)
 
+        ;; WORKAROUND: Visual bell on 29
+        ;; @see https://github.com/doomemacs/themes/issues/733
+        (with-no-warnings
+          (defun my-doom-themes-visual-bell-fn ()
+            "Blink the mode-line red briefly. Set `ring-bell-function' to this to use it."
+            (let* ((buf (current-buffer))
+                   (cookies `(,(face-remap-add-relative 'mode-line-active
+                                                        'doom-themes-visual-bell)
+                              ,(face-remap-add-relative 'mode-line
+                                                        'doom-themes-visual-bell))))
+              (force-mode-line-update)
+              (run-with-timer 0.15 nil
+                              (lambda ()
+                                (with-current-buffer buf
+                                  (mapc #'face-remap-remove-relative cookies)
+                                  (force-mode-line-update))))))
+          (advice-add #'doom-themes-visual-bell-fn :override #'my-doom-themes-visual-bell-fn))
+
         ;; Enable customized theme
         ;; FIXME: https://github.com/emacs-lsp/lsp-treemacs/issues/89
         (with-eval-after-load 'lsp-treemacs
@@ -193,7 +211,10 @@
       "relative to project"
       :toggle (eq doom-modeline-buffer-file-name-style 'relative-to-project)))
     "Project Detection"
-    (("p f" (setq doom-modeline-project-detection 'ffip)
+    (("p a" (setq doom-modeline-project-detection 'auto)
+      "auto"
+      :toggle (eq doom-modeline-project-detection 'auto))
+     ("p f" (setq doom-modeline-project-detection 'ffip)
       "ffip"
       :toggle (eq doom-modeline-project-detection 'ffip))
      ("p t" (setq doom-modeline-project-detection 'projectile)
@@ -427,11 +448,10 @@
 (when (boundp 'x-gtk-use-system-tooltips)
   (setq x-gtk-use-system-tooltips nil))
 
-;; When `centaur-prettify-symbols-alist' is `nil' use font supported ligatures
-(when emacs/>=27p
+;; Ligatures support
+(when (and emacs/>=28p (not centaur-prettify-symbols-alist))
   (use-package composite
     :ensure nil
-    :unless centaur-prettify-symbols-alist
     :init (defvar composition-ligature-table (make-char-table nil))
     :hook (((prog-mode
              conf-mode nxml-mode markdown-mode help-mode
@@ -440,31 +460,31 @@
     :config
     ;; support ligatures, some toned down to prevent hang
     (let ((alist
-           '((33 . ".\\(?:\\(==\\|[!=]\\)[!=]?\\)")
-             (35 . ".\\(?:\\(###?\\|_(\\|[(:=?[_{]\\)[#(:=?[_{]?\\)")
-             (36 . ".\\(?:\\(>\\)>?\\)")
-             (37 . ".\\(?:\\(%\\)%?\\)")
-             (38 . ".\\(?:\\(&\\)&?\\)")
-             (42 . ".\\(?:\\(\\*\\*\\|[*>]\\)[*>]?\\)")
+           '((33  . ".\\(?:\\(==\\|[!=]\\)[!=]?\\)")
+             (35  . ".\\(?:\\(###?\\|_(\\|[(:=?[_{]\\)[#(:=?[_{]?\\)")
+             (36  . ".\\(?:\\(>\\)>?\\)")
+             (37  . ".\\(?:\\(%\\)%?\\)")
+             (38  . ".\\(?:\\(&\\)&?\\)")
+             (42  . ".\\(?:\\(\\*\\*\\|[*>]\\)[*>]?\\)")
              ;; (42 . ".\\(?:\\(\\*\\*\\|[*/>]\\).?\\)")
-             (43 . ".\\(?:\\([>]\\)>?\\)")
+             (43  . ".\\(?:\\([>]\\)>?\\)")
              ;; (43 . ".\\(?:\\(\\+\\+\\|[+>]\\).?\\)")
-             (45 . ".\\(?:\\(-[->]\\|<<\\|>>\\|[-<>|~]\\)[-<>|~]?\\)")
+             (45  . ".\\(?:\\(-[->]\\|<<\\|>>\\|[-<>|~]\\)[-<>|~]?\\)")
              ;; (46 . ".\\(?:\\(\\.[.<]\\|[-.=]\\)[-.<=]?\\)")
-             (46 . ".\\(?:\\(\\.<\\|[-=]\\)[-<=]?\\)")
-             (47 . ".\\(?:\\(//\\|==\\|[=>]\\)[/=>]?\\)")
+             (46  . ".\\(?:\\(\\.<\\|[-=]\\)[-<=]?\\)")
+             (47  . ".\\(?:\\(//\\|==\\|[=>]\\)[/=>]?\\)")
              ;; (47 . ".\\(?:\\(//\\|==\\|[*/=>]\\).?\\)")
-             (48 . ".\\(?:x[a-zA-Z]\\)")
-             (58 . ".\\(?:\\(::\\|[:<=>]\\)[:<=>]?\\)")
-             (59 . ".\\(?:\\(;\\);?\\)")
-             (60 . ".\\(?:\\(!--\\|\\$>\\|\\*>\\|\\+>\\|-[-<>|]\\|/>\\|<[-<=]\\|=[<>|]\\|==>?\\||>\\||||?\\|~[>~]\\|[$*+/:<=>|~-]\\)[$*+/:<=>|~-]?\\)")
-             (61 . ".\\(?:\\(!=\\|/=\\|:=\\|<<\\|=[=>]\\|>>\\|[=>]\\)[=<>]?\\)")
-             (62 . ".\\(?:\\(->\\|=>\\|>[-=>]\\|[-:=>]\\)[-:=>]?\\)")
-             (63 . ".\\(?:\\([.:=?]\\)[.:=?]?\\)")
-             (91 . ".\\(?:\\(|\\)[]|]?\\)")
+             (48  . ".\\(?:x[a-zA-Z]\\)")
+             (58  . ".\\(?:\\(::\\|[:<=>]\\)[:<=>]?\\)")
+             (59  . ".\\(?:\\(;\\);?\\)")
+             (60  . ".\\(?:\\(!--\\|\\$>\\|\\*>\\|\\+>\\|-[-<>|]\\|/>\\|<[-<=]\\|=[<>|]\\|==>?\\||>\\||||?\\|~[>~]\\|[$*+/:<=>|~-]\\)[$*+/:<=>|~-]?\\)")
+             (61  . ".\\(?:\\(!=\\|/=\\|:=\\|<<\\|=[=>]\\|>>\\|[=>]\\)[=<>]?\\)")
+             (62  . ".\\(?:\\(->\\|=>\\|>[-=>]\\|[-:=>]\\)[-:=>]?\\)")
+             (63  . ".\\(?:\\([.:=?]\\)[.:=?]?\\)")
+             (91  . ".\\(?:\\(|\\)[]|]?\\)")
              ;; (92 . ".\\(?:\\([\\n]\\)[\\]?\\)")
-             (94 . ".\\(?:\\(=\\)=?\\)")
-             (95 . ".\\(?:\\(|_\\|[_]\\)_?\\)")
+             (94  . ".\\(?:\\(=\\)=?\\)")
+             (95  . ".\\(?:\\(|_\\|[_]\\)_?\\)")
              (119 . ".\\(?:\\(ww\\)w?\\)")
              (123 . ".\\(?:\\(|\\)[|}]?\\)")
              (124 . ".\\(?:\\(->\\|=>\\||[-=>]\\||||*>\\|[]=>|}-]\\).?\\)")

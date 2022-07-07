@@ -38,7 +38,7 @@
   :if (featurep 'xwidget-internal)
   :bind (("C-c C-z w" . xwidget-webkit-browse-url)
          :map xwidget-webkit-mode-map
-         ("h" . xwidget-hydra/body))
+         ("h"         . xwidget-hydra/body))
   :pretty-hydra
   ((:title (pretty-hydra-title "Webkit" 'faicon "chrome" :face 'all-the-icons-blue)
     :color amaranth :quit-key "q")
@@ -66,7 +66,7 @@
     :after ivy
     :bind (("C-c C-z x" . xwwp)
            :map xwidget-webkit-mode-map
-           ("v" . xwwp-follow-link))
+           ("v"         . xwwp-follow-link))
     :init (setq xwwp-follow-link-completion-system 'ivy)))
 
 ;; CSS mode
@@ -109,7 +109,7 @@
       (setq js2-mode-show-strict-warnings nil))
     (when (executable-find "eslint_d")
       ;; https://github.com/mantoni/eslint_d.js
-      ;; npm -i -g eslint_d
+      ;; Install: npm -i -g eslint_d
       (setq flycheck-javascript-eslint-executable "eslint_d")))
 
   (use-package js2-refactor
@@ -128,10 +128,9 @@
 ;; Live browser JavaScript, CSS, and HTML interaction
 (use-package skewer-mode
   :diminish
-  :hook (((js-mode js2-mode). skewer-mode)
-         (css-mode . skewer-css-mode)
-         (web-mode . skewer-html-mode)
-         (html-mode . skewer-html-mode))
+  :hook (((js-mode js2-mode)   . skewer-mode)
+         (css-mode             . skewer-css-mode)
+         ((html-mode web-mode) . skewer-html-mode))
   :init
   ;; diminish
   (with-eval-after-load 'skewer-css

@@ -104,8 +104,8 @@ FACE defaults to inheriting from default and highlight."
          ("M-C" . symbol-overlay-remove-all)
          ([M-f3] . symbol-overlay-remove-all))
   :hook (((prog-mode yaml-mode) . symbol-overlay-mode)
-         (iedit-mode . turn-off-symbol-overlay)
-         (iedit-mode-end . turn-on-symbol-overlay))
+         (iedit-mode            . turn-off-symbol-overlay)
+         (iedit-mode-end        . turn-on-symbol-overlay))
   :init (setq symbol-overlay-idle-time 0.1)
   :config
   ;; Disable symbol highlighting while selecting
@@ -172,7 +172,7 @@ FACE defaults to inheriting from default and highlight."
   :defines helpful-mode-map
   :bind (:map help-mode-map
          ("w" . rainbow-mode))
-  :hook ((html-mode php-mode help-mode helpful-mode) . rainbow-mode)
+  :hook ((html-mode php-mode helpful-mode) . rainbow-mode)
   :init (with-eval-after-load 'helpful
           (bind-key "w" #'rainbow-mode helpful-mode-map))
   :config
@@ -202,7 +202,7 @@ FACE defaults to inheriting from default and highlight."
   :custom-face
   (hl-todo ((t (:inherit default :height 0.9 :width condensed :weight bold :underline nil :inverse-video t))))
   :bind (:map hl-todo-mode-map
-         ([C-f3] . hl-todo-occur)
+         ([C-f3]    . hl-todo-occur)
          ("C-c t p" . hl-todo-previous)
          ("C-c t n" . hl-todo-next)
          ("C-c t o" . hl-todo-occur)
@@ -222,7 +222,7 @@ FACE defaults to inheriting from default and highlight."
          ("SPC" . diff-hl-mark-hunk))
   :hook ((after-init . global-diff-hl-mode)
          (dired-mode . diff-hl-dired-mode)
-         ((after-load-theme server-after-make-frame) . my-set-diff-hl-faces))
+         ((after-init after-load-theme server-after-make-frame) . my-set-diff-hl-faces))
   :init (setq diff-hl-draw-borders nil)
   :config
   ;; Highlight on-the-fly
@@ -234,7 +234,7 @@ FACE defaults to inheriting from default and highlight."
   (defun my-set-diff-hl-faces ()
     "Set `diff-hl' faces."
     (custom-set-faces
-     `(diff-hl-change ((t (:foreground ,(face-background 'highlight) :background nil))))
+     `(diff-hl-change ((t (:foreground ,(face-foreground 'custom-changed) :background nil))))
      '(diff-hl-insert ((t (:inherit diff-added :background nil))))
      '(diff-hl-delete ((t (:inherit diff-removed :background nil))))))
 

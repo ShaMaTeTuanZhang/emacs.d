@@ -37,29 +37,25 @@
   (use-package fanyi
     :bind (("C-c d f" . fanyi-dwim)
            ("C-c d d" . fanyi-dwim2)
-           ("C-c d h" . fanyi-from-history))))
+           ("C-c d h" . fanyi-from-history))
+    :custom (fanyi-providers '(fanyi-haici-provider
+                               fanyi-longman-provider)))
+
+  (use-package go-translate
+    :bind (("C-c d g" . gts-do-translate))
+    :init (setq gts-translate-list '(("en" "zh") ("zh" "en")))))
 
 ;; Youdao Dictionary
 (use-package youdao-dictionary
-  :commands youdao-dictionary-play-voice-of-current-word
-  :bind (("C-c y" . my-youdao-dictionary-search-at-point)
+  :bind (("C-c y"   . my-youdao-dictionary-search-at-point)
          ("C-c d Y" . my-youdao-dictionary-search-at-point)
-         ("C-c d y" . youdao-dictionary-search)
+         ("C-c d y" . youdao-dictionary-search-async)
          :map youdao-dictionary-mode-map
-         ("h" . my-youdao-dictionary-help)
-         ("?" . my-youdao-dictionary-help))
+         ("h"       . my-youdao-dictionary-help)
+         ("?"       . my-youdao-dictionary-help))
   :init
-  (setq url-automatic-caching t
-        youdao-dictionary-use-chinese-word-segmentation t) ; 中文分词
-
-  (defun my-youdao-dictionary-search-at-point ()
-    "Search word at point and display result with `posframe', `pos-tip', or buffer."
-    (interactive)
-    (if (display-graphic-p)
-        (if (posframe-workable-p)
-            (youdao-dictionary-search-at-point-posframe)
-          (youdao-dictionary-search-at-point-tooltip))
-      (youdao-dictionary-search-at-point)))
+  (setq url-automatic-caching t)
+  (setq youdao-dictionary-use-chinese-word-segmentation t) ; 中文分词
   :config
   (with-no-warnings
     (with-eval-after-load 'hydra
@@ -76,6 +72,13 @@
         (let ((hydra-hint-display-type 'message))
           (youdao-dictionary-hydra/body))))
 
+    (defun my-youdao-dictionary-search-at-point ()
+      "Search word at point and display result with `posframe', `pos-tip' or buffer."
+      (interactive)
+      (if (posframe-workable-p)
+          (youdao-dictionary-search-at-point-posframe)
+        (youdao-dictionary-search-at-point)))
+
     (defun my-youdao-dictionary--posframe-tip (string)
       "Show STRING using `posframe-show'."
       (unless (posframe-workable-p)
@@ -91,22 +94,24 @@
                 (insert string)
                 (insert (propertize "\n" 'face '(:height 0.5)))
                 (set (make-local-variable 'youdao-dictionary-current-buffer-word) word)))
-            (posframe-show youdao-dictionary-buffer-name
-                           :position (point)
-                           :left-fringe 16
-                           :right-fringe 16
-                           :max-width (/ (frame-width) 2)
-                           :max-height (/ (frame-height) 2)
-                           :background-color (face-background 'tooltip nil t)
-                           :internal-border-color (face-background 'posframe-border nil t)
-                           :internal-border-width 1)
+            (posframe-show
+             youdao-dictionary-buffer-name
+             :position (point)
+             :left-fringe 16
+             :right-fringe 16
+             :max-width (/ (frame-width) 2)
+             :max-height (/ (frame-height) 2)
+             :background-color (face-background 'tooltip nil t)
+             :internal-border-color (face-background 'posframe-border nil t)
+             :internal-border-width 1)
             (unwind-protect
                 (push (read-event) unread-command-events)
               (progn
                 (posframe-hide youdao-dictionary-buffer-name)
                 (other-frame 0)))
             (message "Nothing to look up"))))
-    (advice-add #'youdao-dictionary--posframe-tip :override #'my-youdao-dictionary--posframe-tip)))
+    (advice-add #'youdao-dictionary--posframe-tip
+                :override #'my-youdao-dictionary--posframe-tip)))
 
 ;; OSX dictionary
 (when sys/macp
