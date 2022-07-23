@@ -1,3 +1,4 @@
+(require 'meow)
 
 (defun meow-setup ()
   (setq meow-cheatsheet-layout meow-cheatsheet-layout-colemak)
@@ -19,6 +20,8 @@
    '("9" . previous-buffer)
    '("0" . next-buffer)
    '("b" . counsel-switch-buffer)
+   '("B" . ibuffer)
+   '("e" . eaf-open-browser-other-window)
    '("l" . "C-c C-p")
    '("o" . ace-window)
    '("p" . projectile-command-map)
@@ -89,8 +92,13 @@
    '("'" . repeat)
    '("<escape>" . ignore)))
 
-(require 'meow)
 (meow-setup)
 (meow-global-mode 1)
+
+(define-key key-translation-map (kbd "SPC")
+  (lambda (prompt)
+   (if (derived-mode-p 'eaf-mode)
+    (meow-keypad))))
+
 
 (provide 'init-meow)
